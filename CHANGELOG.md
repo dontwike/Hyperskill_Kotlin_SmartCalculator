@@ -26,3 +26,8 @@ println(sum)```
 But I figure it's easier to parse this way.
 
 . o O ( I wonder if there's a better way to add a list of numbers than `List<Int>.sumOf. {it}`? )
+
+### Stage 3/8: Count them allocation
+
+Well this is a good example of the benefits of thinking ahead.
+Added a single-line function for a '\help' command and removed the single-line restriction on the add function.

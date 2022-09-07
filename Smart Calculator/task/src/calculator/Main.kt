@@ -8,6 +8,7 @@ object Calculator {
         do {
             when (val input = readln().trim()) {
                 "/exit" -> break
+                "/help" -> showHelp()
                 "" -> continue
                 else -> processInput(input)
             }
@@ -15,13 +16,14 @@ object Calculator {
         println("Bye!")
     }
 
+    private fun showHelp() = println("The program calculates the sum of numbers")
+
     private fun processInput(input: String) {
         val operands = input.split(" ").map {it.toIntOrNull()?: throw IllegalArgumentException("\"$it\" is not an integer.")}
         add(operands)
     }
 
     private fun add(operands: List<Int>) {
-        if (operands.size > 2) throw IllegalArgumentException("add() was passed the wrong number of integers.")
         val sum = operands.sumOf { it }
         println(sum)
     }
