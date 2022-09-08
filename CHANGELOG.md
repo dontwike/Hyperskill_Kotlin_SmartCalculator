@@ -73,3 +73,18 @@ I'm not totally satisfied with this version but here are the changes
 
 Todo:
 - There's a single line of code specifically to remove the unnecessary `+` when a user includes it in a single-operand expression, and I want so badly to remove it/fold it into another function but doing so would require me to either re-asses what an "operand" is or change something else in the logic and darn it I just want things to work for right now!
+
+### Stage 6/8 Variables
+
+Cool. Cool. Cool.
+okay so back in Stage 3 I think? at some point the description said "you code should not throw Exceptions" 
+Anyway, I totally misunderstood that as not using Exceptions at all, even for control flow purposes. But no. Actually. That's silly. I can totally do that.
+Which is why things went from throwing relevant Exceptions to `println([exception text here])` which, really messed with control flow.
+
+Also wow, Regex continues to cause me problems, but I'm getting a little more comfortable with it.
+
+Oh yeah, the changes:
+- You can now assign and sum variables (variables can only contain letters)
+- Back to catching thrown exceptions for control flow oh my goodness it's so much easier this way.
+- Renamed a few functions to make them clearer
+- Got rid of the line of code that was bothering me when I realized `.toInt()` clears the extraneous `+`
