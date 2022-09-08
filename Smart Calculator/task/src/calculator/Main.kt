@@ -3,59 +3,69 @@ package calculator
 import kotlin.system.exitProcess
 
 object Calculator {
+    private val operator = """[+-]+""".toRegex()
+    private val operand = """[-+]?\d+""".toRegex()
+    private val expressionRegex = """$operand( $operator $operand)*""".toRegex()
+    private val commandList = """/(exit|help)| """.toRegex()
 
     fun start() {
         do {
-            when (val input = readln().trim()) {
-                "/exit" -> break
-                "/help" -> showHelp()
-                "" -> continue
-                else -> {
-                    println(input.split(" ").filter { it != "" }.toMutableList().math())
-                }
+            val input = readln().trim()
+            if (input == "") continue //it might be possible to replace this with when(?)
+            if (input.startsWith('/')) {
+                if (input.matches(commandList)) runCommand(input)
+                else println("Unknown Command")
+                continue
             }
+            if (input.matches(expressionRegex)) input.math()
+            else println("Invalid expression")
         } while (true)
+    }
+
+    private fun runCommand(command: String) {
+        when (command) {
+            "/help" -> showHelp()
+            "/exit" -> exit()
+        }
+    }
+
+    private fun exit() {
         println("Bye!")
+        exitProcess(0)
     }
 
     private fun showHelp() = println("The program calculates the sum of numbers")
 
-    private fun MutableList<String>.math(): String {
-        while (this.size != 1) {
-            if (this.size % 2 == 0) throw IllegalArgumentException("Invalid number of inputs")
-            val operatorIndex = this.findOperator()
-            val left = this[operatorIndex - 1].toIntOrNull()?: throw Exception("${this[operatorIndex - 1]} is not a valid input")
-            val right = this[operatorIndex + 1].toIntOrNull()?: throw Exception("${this[operatorIndex + 1]} is not a valid input")
-            val operator = this[operatorIndex]
-
-            val result = when (operator) {
-                "+" -> left + right
-                "-" -> left - right
-                else -> throw IllegalArgumentException("found invalid operator")
+    private fun String.math() {
+        var returnString = this
+        while (!operand.matches(returnString)) {
+            val subExpression = returnString.expressionMatch()
+            val (o1, op, o2) = subExpression.split(" ")
+            val result = when (op.simplified()) {
+                "+" -> (o1.toInt() + o2.toInt()).toString()
+                "-" -> (o1.toInt() - o2.toInt()).toString()
+                else -> throw RuntimeException("Attempted to perform invalid operator function")
             }
-
-            this[operatorIndex] = result.toString()
-            this.removeAt(operatorIndex + 1)
-            this.removeAt(operatorIndex - 1)
+            returnString = returnString.replace(subExpression, result)
         }
-        return this[0]
+        returnString = returnString.replace("+", "") //I REALLY don't like this line of code. Please fold it into smth else.
+        println(returnString)
     }
 
-    private fun MutableList<String>.findOperator(): Int {
-        if (this[1].contains("+") || this[1].contains("-")) {this.simplifyOperator(1)}
-        return 1
+    private fun String.expressionMatch(): String { //I will have to modify this to find priority for multiplication/division soon
+        val regPat = """$operand $operator $operand""".toRegex()
+        return regPat.find(this)?.value?: "Didn't find a matchResult"
     }
-
-    private fun MutableList<String>.simplifyOperator(pos: Int) {
-        var workingString = this[pos]
-        while (workingString.length != 1) {
-            if (workingString[0] != '+' && workingString[0] != '-') throw IllegalArgumentException("Invalid operator: ${this[pos]}")
-            workingString = workingString.simplified()
+    private fun String.simplified(): String {
+        var returnString = this
+        while (!returnString.matches("[-+]".toRegex())) {
+                returnString = returnString.replace("--", "+")
+                    .replace("++", "+")
+                    .replace("+-", "-")
+                    .replace("-+", "-")
         }
-        this[pos] = workingString
+        return returnString
     }
-    private fun String.simplified(): String = this.replace("--", "+").replace("++", "+")
-        .replace("+-", "-").replace("-+", "-")
 }
 
 fun main() {
