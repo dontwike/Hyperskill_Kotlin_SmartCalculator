@@ -115,4 +115,17 @@ Guess they're right when they say don't fix what ain't broke.
 Alright this one's getting kinda long. I'm done. Next stage should be BigInteger. Not too worried about that, but I could be wrong again.
 
 Changes:
-- Added support for * / () and ^ added
+- Added support for * / () and ^
+
+### Stage 8/8 Very Big
+
+Haha, ok I was right. This was very easy.
+Just changed some `.toInt()` to `.toBigInteger()` and `.toDouble()` to `.toBigDecimal()` with some nipping and tucking for the `^` operator.
+Sorta expected it to be like that.
+Wow, I'm done!
+
+Changes:
+- Added support for larger numbers
+- Fleshed out the /help command and added a /variables command to give some information on variables in the calculator
+
+That's a wrap, send it!
