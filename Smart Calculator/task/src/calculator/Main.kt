@@ -1,7 +1,6 @@
 package calculator
 
 import java.util.*
-import kotlin.math.pow
 
 class CalculatorException: RuntimeException{
     constructor() : super()
@@ -18,10 +17,12 @@ object Calculator {
     private val expressionRegex = """\(* *$operandRegex *\)*( *$operatorRegex *\(* *$operandRegex *\)*)*""".toRegex()
     private val assignmentRegex = """$identifierRegex *= *$operandRegex""".toRegex()
     private val assignmentLeftRegex = """$identifierRegex *=.*""".toRegex()
-    private val commandRegex = """/(exit|help)| """.toRegex()
+    private val commandRegex = """/(exit|help|variables)| """.toRegex()
     private val variables = mutableMapOf<String, String>()
 
     fun run() {
+        println("Enter a command, assign a variable, enter an expression to evaluate. \nYou can type \\help for more information, or \\exit to shut down the calculator.")
+//        TODO: uncomment the above line in production, it is commented out now so that the program passes Hyperskill checks
         do {
             val input = readln().trim()
             try {
@@ -48,10 +49,71 @@ object Calculator {
     private fun runCommand(command: String) {
         when (command) {
             "/help" -> showHelp()
+            "/variables" -> aboutVariables()
             "/exit" -> exit()
         }
     }
-    private fun showHelp() = println("The program calculates the sum of numbers")
+    private fun showHelp() = println("""
+        This program does math!
+        
+        Here are some things it can do:
+        
+        Assign a variable to a number:
+        [variable_name]=[a_number]
+        a = 2
+        b = 3
+        
+        Assign a variable to another variable that's already defined:
+        [variable_name]=[another_variable_name]
+        a = 2 
+        b = a 
+        now, both a and b are equal to 2
+        
+        Re-assign variables.
+        Input:
+        a = 1 
+        b = a 
+        a = 3 
+        Note, b is now also equal to 3
+        You can learn more about this by typing /variables
+        
+        Evaluate expressions using variables or numbers
+        Supported operators: +, -, *, /
+        1 + 2 
+        output: 3
+        3 * 5 
+        output: 15
+        
+        Evaluate more complicated expressions, taking care to follow expression priority:
+        2 - 1 * 8 + 6 / 2 
+        output: -3
+        3 + 8 * ((4 + 3) * 2 + 1) - 6 / (2 + 1) 
+        output: 121
+        
+        That's about everything, there's also a handy command list available.
+        
+        Command List:
+        \help       - Prints this fun little help message!
+        \variables  - Gives you more information about how the program handles variables
+        \exit       - Turns off the program
+        
+    """.trimIndent())
+    private fun aboutVariables() = println("""
+        Some notes about variables:
+        
+        variable names can only contain letters from the latin alphabet
+        a2, _myVar, and Th1s are all invalid variables
+        
+        variables are case sensitive, so if
+        a = 1
+        but you try to evaluate A + 6
+        the output will be unknown variable!
+        
+        Variables are also evaluated "lazily"
+        meaning that if A = 1 and B = A
+        when A changes, so does B
+        
+    """.trimIndent())
     private fun exit() = println("Bye!")
 
     private fun mapIdentifier(assignment: String) {
@@ -62,12 +124,14 @@ object Calculator {
     }
 
     private fun String.maths(operator: String = "?", second: String = ""): String {
+        val a = this.decode().toBigInteger()
+        val b = second.decode().toBigInteger()
         val result = when (operator.decode()) {
-            "-" -> this.decode().toInt() - second.decode().toInt()
-            "+" -> this.decode().toInt() + second.decode().toInt()
-            "*" -> this.decode().toInt() * second.decode().toInt()
-            "/" -> this.decode().toInt() / second.decode().toInt()
-            "^" -> (this.decode().toDouble().pow(second.decode().toDouble())).toInt()
+            "-" -> a - b
+            "+" -> a + b
+            "*" -> a * b
+            "/" -> a / b
+            "^" -> (a.toBigDecimal().pow(b.toInt())).toBigInteger()
             "?" -> throw CalculatorException("Did not pass operator to maths function")
             else -> throw CalculatorException("Something unexpected in maths function")
         }
@@ -132,22 +196,18 @@ object Calculator {
         val postfix: LinkedList<String> = this.toPostfixList()
         val workingStack: Stack<String> = Stack()
         while (postfix.isNotEmpty()) {
-            val inHad = postfix.pop()?: throw CalculatorException("Pop on empty stack")
-            if (operandRegex.matches(inHad)) {
-                workingStack.push(inHad)
+            val inHand = postfix.pop()?: throw CalculatorException("Pop on empty stack")
+            if (operandRegex.matches(inHand)) {
+                workingStack.push(inHand)
                 continue
             }
-            if (operatorRegex.matches(inHad)) {
+            if (operatorRegex.matches(inHand)) {
                 val secondOperand = workingStack.pop()?: throw CalculatorException("Pop on empty stack")
                 val firstOperand = workingStack.pop()?: throw CalculatorException("Pop on empty stack")
-                workingStack.push(firstOperand.maths(operator = inHad,second = secondOperand))
+                workingStack.push(firstOperand.maths(operator = inHand,second = secondOperand))
                 continue
             }
             throw CalculatorException("inHand string neither operator or operand... How'd that get in there?")
-            //check first of postfix (.peek()?
-            //if operand, add to workingStack
-            //if operator, DoMath with it and the top 2 of the stack
-            //if neither, throw CalculatorException("Problem in mathRPN")
         }
         println(workingStack.pop().decode())
     }
@@ -156,18 +216,18 @@ object Calculator {
         val tempStack: LinkedList<String> = LinkedList()
         val postfixList = LinkedList<String>()
         for (item in expressionList) {
-            when (true) {
+            when {
                 operandRegex.matches(item) -> postfixList.add(item)
 
-                tempStack.isEmpty(),
-                (tempStack.peek() == "("),
-                (item.priority() > tempStack.peek().priority()),
+                tempStack.isEmpty() -> tempStack.push(item)
+                (tempStack.peek() == "(") -> tempStack.push(item)
+                (item.priority() > tempStack.peek().priority()) -> tempStack.push(item)
                 (item == "(") -> tempStack.push(item)
 
-                (item.priority() <= tempStack.peek().priority()),
+                (item.priority() <= tempStack.peek().priority()) -> postfixList.addAll(tempStack.popStack(item))
                 (item == ")") -> postfixList.addAll(tempStack.popStack(item))
                 else -> {}
-            } //this statement is cluttered, some checks are redundant due to how the .priority function works. But cleaning it is less important than making sure the calculator works.
+            }
         }
         postfixList.addAll(tempStack.popStack())
         return postfixList
@@ -199,11 +259,7 @@ object Calculator {
             else -> 0
         }
     }
-    private fun String.expressionMatch(): String {
 
-        val regPat = """$operandRegex *$operatorRegex *$operandRegex""".toRegex()
-        return regPat.find(this)?.value?: throw CalculatorException("Didn't find a matchResult")
-    }
     private fun String.decode(): String {
         var returnString = this
         if (operandRegex.matches(this)) {
