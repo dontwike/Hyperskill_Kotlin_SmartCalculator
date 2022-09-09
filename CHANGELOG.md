@@ -88,3 +88,31 @@ Oh yeah, the changes:
 - Back to catching thrown exceptions for control flow oh my goodness it's so much easier this way.
 - Renamed a few functions to make them clearer
 - Got rid of the line of code that was bothering me when I realized `.toInt()` clears the extraneous `+`
+
+### Stage 7/8 I've got the power
+
+We did it!
+We added multiplication! And operator preference!
+And we did it in a way I kinda totally didn't expect, so the "planning ahead" bit kinda didn't work but that's OK.
+So now, when we do maths, we instead convert the input to a LinkedList/Deque based on reverse polish notation RPN. Then pop items from the front of the Deque onto a stack. if the evaluated object is an operator, pop two entries off the working stack and perform the associated function for the evaluated object.
+Then print out the result when the Deque is empty. We always decode what we pop off the stack in the event someone enters `n + 1` then `n`. So that it gives `1` instead of just repeating `n` back at the user.
+That's actually something to think about/plan for. "when do we solve/decode a variable into it's number-value"
+I'm aiming for as late as possible because at some point in the future I think it'd be cool to allow you to assign expressions to variables. Like. 
+```
+a = 3
+b = 4
+c = a + b // c = 7
+a = 2 // Now, c equals 6
+```
+I think that's called lazy evaluation? Like with sequences, how it doesn't calculate it until necessary.
+To do that though I'd need to add something for expression evaluation. Since the regex for it just checks that parens are in the right places, not that there's equal amounts.
+Probably just make a function like `.isExpression()` that both checks Regex and that the # of left and right parens is equal. Shouldn't be hard. Plus then I can shave 2 lines of code in the `.toPostfixList()` code.  
+
+I'm rambling though. It was fun! Regex is pain! (I do enjoy it but gosh it's a lot of translating sometimes.)
+There was this whole thing where I wanted to take the ` *\(* *` and ` *\)* *` out of the `expressionRegex` and put it in `operandRegex` but that ended up breaking things in `toPostfixList()` so I had to undo it. Oops!
+Guess they're right when they say don't fix what ain't broke.
+
+Alright this one's getting kinda long. I'm done. Next stage should be BigInteger. Not too worried about that, but I could be wrong again.
+
+Changes:
+- Added support for * / () and ^ added
