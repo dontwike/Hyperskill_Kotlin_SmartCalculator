@@ -17,11 +17,11 @@ object Calculator {
     private val expressionRegex = """\(* *$operandRegex *\)*( *$operatorRegex *\(* *$operandRegex *\)*)*""".toRegex()
     private val assignmentRegex = """$identifierRegex *= *$operandRegex""".toRegex()
     private val assignmentLeftRegex = """$identifierRegex *=.*""".toRegex()
-    private val commandRegex = """/(exit|help|variables)| """.toRegex()
+    private val commandRegex = """/(commands|exit|help|variables)| """.toRegex()
     private val variables = mutableMapOf<String, String>()
 
     fun run() {
-        println("Enter a command, assign a variable, enter an expression to evaluate. \nYou can type \\help for more information, or \\exit to shut down the calculator.")
+        println("Enter a command, assign a variable, enter an expression to evaluate. \nYou can type \\commands for the command list, \\help for more information, or \\exit to shut down the calculator.")
 //        TODO: uncomment the above line in production, it is commented out now so that the program passes Hyperskill checks
         do {
             val input = readln().trim()
@@ -51,8 +51,18 @@ object Calculator {
             "/help" -> showHelp()
             "/variables" -> aboutVariables()
             "/exit" -> exit()
+            "/commands" -> commandList()
         }
     }
+
+    private fun commandList() = println("""
+    Command List:
+    /commands   - Shows all commands available in the command list.
+    /help       - Prints this fun little help message!
+    /variables  - Gives you more information about how the program handles variables
+    /exit       - Turns off the program
+    """.trimIndent())
+
     private fun showHelp() = println("""
         This program does math!
         
@@ -90,13 +100,7 @@ object Calculator {
         3 + 8 * ((4 + 3) * 2 + 1) - 6 / (2 + 1) 
         output: 121
         
-        That's about everything, there's also a handy command list available.
-        
-        Command List:
-        \help       - Prints this fun little help message!
-        \variables  - Gives you more information about how the program handles variables
-        \exit       - Turns off the program
-        
+        That's about everything.
     """.trimIndent())
     private fun aboutVariables() = println("""
         Some notes about variables:
