@@ -38,7 +38,7 @@ object Calculator {
                     mapIdentifier(input)
                     continue
                 }
-                if (input.matches(expressionRegex)) input.mathRPN()
+                if (input.isExpression()) input.mathRPN()
                 else throw CalculatorException("Invalid identifier")
             } catch (e: CalculatorException) {
                 println(e.message)
@@ -140,8 +140,6 @@ object Calculator {
     private fun String.toExpressionList(): MutableList<String> {
         var workingString = this.replace(" ", "")
         val workingList = mutableListOf<String>()
-        var leftParens = 0
-        var rightParens = 0
         var searchingForOperand = true
         do {
             var match: MatchResult?
@@ -150,7 +148,6 @@ object Calculator {
                 if (match != null) {
                     match = "\\(+".toRegex().find(workingString)!!
                     repeat(match.value.length) {
-                        leftParens ++
                         workingString = workingString.substring(1)
                         workingList.add("(")
                     }
@@ -165,7 +162,6 @@ object Calculator {
                 if (match != null) {
                     match = "\\)+".toRegex().find(workingString)!!
                     repeat(match.value.length) {
-                        rightParens ++
                         workingString = workingString.substring(1)
                         workingList.add(")")
                     }
@@ -183,14 +179,7 @@ object Calculator {
                 searchingForOperand = true
             }
         } while (workingString.isNotEmpty())
-        if (searchingForOperand || leftParens != rightParens) throw CalculatorException("invalid exp")
         return workingList
-        //go through list trying to find lparen?,operand,rparen?,operator,lparen?,operand,rparen?
-        //as this proceeds, keep track somehow of how far in the list we've gotten through
-        //maybe remove from the workingString as we go through...
-        //when workingString empty or gone though, end loop
-        //check that the list is valid by checking left to right paren count
-        //return workingList
     }
     private fun String.mathRPN() {
         val postfix: LinkedList<String> = this.toPostfixList()
@@ -258,6 +247,17 @@ object Calculator {
             priority1Regex.matches(this) -> 1
             else -> 0
         }
+    }
+    private fun String.isExpression(): Boolean {
+        var leftParenthesisCount = 0
+        var rightParenthesisCount= 0
+        for (char in this) {
+            if (char == '(') leftParenthesisCount++
+            if (char == ')') rightParenthesisCount++
+        }
+        if (leftParenthesisCount != rightParenthesisCount) throw CalculatorException("Invalid # of parenthesis")
+        if (!expressionRegex.matches(this)) throw CalculatorException("Invalid identifier")
+        return true
     }
 
     private fun String.decode(): String {
