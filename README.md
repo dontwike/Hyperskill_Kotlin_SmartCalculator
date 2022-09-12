@@ -46,9 +46,10 @@ From the /help command:
         That's about everything, there's also a handy command list available.
         
         Command List:
-        \help       - Prints this fun little help message!
-        \variables  - Gives you more information about how the program handles variables
-        \exit       - Turns off the program
+        /commands   - Shows all commands available in the command list.
+        /help       - Prints this fun little help message!
+        /variables  - Gives you more information about how the program handles variables
+        /exit       - Turns off the program
 ```
 
 I have also included the tests that Hyperskill uses to determine if a project is complete.

@@ -17,11 +17,11 @@ object Calculator {
     private val expressionRegex = """\(* *$operandRegex *\)*( *$operatorRegex *\(* *$operandRegex *\)*)*""".toRegex()
     private val assignmentRegex = """$identifierRegex *= *$operandRegex""".toRegex()
     private val assignmentLeftRegex = """$identifierRegex *=.*""".toRegex()
-    private val commandRegex = """/(exit|help|variables)| """.toRegex()
+    private val commandRegex = """/(commands|exit|help|variables)| """.toRegex()
     private val variables = mutableMapOf<String, String>()
 
     fun run() {
-        println("Enter a command, assign a variable, enter an expression to evaluate. \nYou can type \\help for more information, or \\exit to shut down the calculator.")
+        println("Enter a command, assign a variable, enter an expression to evaluate. \nYou can type \\commands for the command list, \\help for more information, or \\exit to shut down the calculator.")
 //        TODO: uncomment the above line in production, it is commented out now so that the program passes Hyperskill checks
         do {
             val input = readln().trim()
@@ -38,7 +38,7 @@ object Calculator {
                     mapIdentifier(input)
                     continue
                 }
-                if (input.matches(expressionRegex)) input.mathRPN()
+                if (input.isExpression()) input.mathRPN()
                 else throw CalculatorException("Invalid identifier")
             } catch (e: CalculatorException) {
                 println(e.message)
@@ -51,8 +51,18 @@ object Calculator {
             "/help" -> showHelp()
             "/variables" -> aboutVariables()
             "/exit" -> exit()
+            "/commands" -> commandList()
         }
     }
+
+    private fun commandList() = println("""
+    Command List:
+    /commands   - Shows all commands available in the command list.
+    /help       - Prints this fun little help message!
+    /variables  - Gives you more information about how the program handles variables
+    /exit       - Turns off the program
+    """.trimIndent())
+
     private fun showHelp() = println("""
         This program does math!
         
@@ -90,13 +100,7 @@ object Calculator {
         3 + 8 * ((4 + 3) * 2 + 1) - 6 / (2 + 1) 
         output: 121
         
-        That's about everything, there's also a handy command list available.
-        
-        Command List:
-        \help       - Prints this fun little help message!
-        \variables  - Gives you more information about how the program handles variables
-        \exit       - Turns off the program
-        
+        That's about everything.
     """.trimIndent())
     private fun aboutVariables() = println("""
         Some notes about variables:
@@ -140,8 +144,6 @@ object Calculator {
     private fun String.toExpressionList(): MutableList<String> {
         var workingString = this.replace(" ", "")
         val workingList = mutableListOf<String>()
-        var leftParens = 0
-        var rightParens = 0
         var searchingForOperand = true
         do {
             var match: MatchResult?
@@ -150,7 +152,6 @@ object Calculator {
                 if (match != null) {
                     match = "\\(+".toRegex().find(workingString)!!
                     repeat(match.value.length) {
-                        leftParens ++
                         workingString = workingString.substring(1)
                         workingList.add("(")
                     }
@@ -165,7 +166,6 @@ object Calculator {
                 if (match != null) {
                     match = "\\)+".toRegex().find(workingString)!!
                     repeat(match.value.length) {
-                        rightParens ++
                         workingString = workingString.substring(1)
                         workingList.add(")")
                     }
@@ -183,14 +183,7 @@ object Calculator {
                 searchingForOperand = true
             }
         } while (workingString.isNotEmpty())
-        if (searchingForOperand || leftParens != rightParens) throw CalculatorException("invalid exp")
         return workingList
-        //go through list trying to find lparen?,operand,rparen?,operator,lparen?,operand,rparen?
-        //as this proceeds, keep track somehow of how far in the list we've gotten through
-        //maybe remove from the workingString as we go through...
-        //when workingString empty or gone though, end loop
-        //check that the list is valid by checking left to right paren count
-        //return workingList
     }
     private fun String.mathRPN() {
         val postfix: LinkedList<String> = this.toPostfixList()
@@ -258,6 +251,17 @@ object Calculator {
             priority1Regex.matches(this) -> 1
             else -> 0
         }
+    }
+    private fun String.isExpression(): Boolean {
+        var leftParenthesisCount = 0
+        var rightParenthesisCount= 0
+        for (char in this) {
+            if (char == '(') leftParenthesisCount++
+            if (char == ')') rightParenthesisCount++
+        }
+        if (leftParenthesisCount != rightParenthesisCount) throw CalculatorException("Invalid # of parenthesis")
+        if (!expressionRegex.matches(this)) throw CalculatorException("Invalid identifier")
+        return true
     }
 
     private fun String.decode(): String {
