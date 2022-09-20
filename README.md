@@ -11,18 +11,23 @@ From the /help command:
         
         Here are some things it can do:
         
-        Assign a variable to a number:
+    Assign a variable to a number:
         [variable_name]=[a_number]
         a = 2
         b = 3
         
-        Assign a variable to another variable that's already defined:
+    Assign a variable to another variable that's already defined:
         [variable_name]=[another_variable_name]
         a = 2 
         b = a 
         now, both a and b are equal to 2
+    
+    Assign a variable to an expression:
         
-        Re-assign variables.
+        c = 2*a+b^6
+        this only works if 'a' and 'b' are already defined.
+        
+    Re-assign variables.
         Input:
         a = 1 
         b = a 
@@ -30,24 +35,25 @@ From the /help command:
         Note, b is now also equal to 3
         You can learn more about this by typing /variables
         
-        Evaluate expressions using variables or numbers
+    Evaluate expressions using variables or numbers
         Supported operators: +, -, *, /
         1 + 2 
         output: 3
         3 * 5 
         output: 15
         
-        Evaluate more complicated expressions, taking care to follow expression priority:
+    Evaluate more complicated expressions, taking care to follow expression priority:
         2 - 1 * 8 + 6 / 2 
         output: -3
         3 + 8 * ((4 + 3) * 2 + 1) - 6 / (2 + 1) 
         output: 121
         
-        That's about everything, there's also a handy command list available.
+    That's about everything.
         
-        Command List:
+    Command List:
         /commands   - Shows all commands available in the command list.
-        /help       - Prints this fun little help message!
+        /help       - Prints the help message.
+        /list       - Lists currently assigned variables.
         /variables  - Gives you more information about how the program handles variables
         /exit       - Turns off the program
 ```

@@ -11,35 +11,36 @@ object Calculator {
     private val priority2Regex = """[*/]""".toRegex()
     private val priority1Regex = """[+-]+""".toRegex()
     private val operatorRegex = """($priority3Regex|$priority2Regex|$priority1Regex)""".toRegex()
-    private val identifierRegex = """[a-zA-Z]+""".toRegex()
+    private val variableRegex = """[a-zA-Z]+""".toRegex()
     private val numberRegex = """[-+]?\d+""".toRegex()
-    private val operandRegex = """($numberRegex|$identifierRegex)""".toRegex()
+    private val operandRegex = """($numberRegex|$variableRegex)""".toRegex()
     private val expressionRegex = """\(* *$operandRegex *\)*( *$operatorRegex *\(* *$operandRegex *\)*)*""".toRegex()
-    private val assignmentRegex = """$identifierRegex *= *$operandRegex""".toRegex()
-    private val assignmentLeftRegex = """$identifierRegex *=.*""".toRegex()
-    private val commandRegex = """/(commands|exit|help|variables)| """.toRegex()
+    private val assignmentRegex = """$variableRegex *= *(($operandRegex|$expressionRegex))""".toRegex()
+    private val assignmentLeftRegex = """$variableRegex *=.*""".toRegex()
+    private val commandRegex = """/(commands|list|exit|help|variables)| """.toRegex()
     private val variables = mutableMapOf<String, String>()
 
     fun run() {
-        println("Enter a command, assign a variable, enter an expression to evaluate. \nYou can type \\commands for the command list, \\help for more information, or \\exit to shut down the calculator.")
-//        TODO: uncomment the above line in production, it is commented out now so that the program passes Hyperskill checks
+        println("Enter a command, assign a variable, or enter an expression to evaluate. \nYou can type \u001B[0;32m\\commands\u001B[m for the command list, \u001B[0;32m\\help\u001B[0m for more information, or \u001B[0;32m\\exit\u001B[0m to shut down the calculator.")
         do {
             val input = readln().trim()
             try {
-                if (input == "") continue //it might be possible to replace this with when(?)
-                if (input.startsWith('/')) {
-                    if (input.matches(commandRegex)) runCommand(input)
-                    else throw CalculatorException("Unknown Command")
-                    continue
+                when {
+                    (input == "") -> {}
+                    input.startsWith('/') -> {
+                        if (input.matches(commandRegex)) runCommand(input)
+                        else throw CalculatorException("Unknown Command")
+                    }
+                    input.contains("=") -> {
+                        if (!assignmentLeftRegex.matches(input)) throw CalculatorException("Invalid identifier")
+                        if (!assignmentRegex.matches(input)) throw CalculatorException("Invalid assignment")
+                        mapIdentifier(input)
+                    }
+                    else -> {
+                        if (input.isExpression()) println(input.mathRPN())
+                        else throw CalculatorException("Invalid expression")
+                    }
                 }
-                if (input.contains("=")) {
-                    if (!assignmentLeftRegex.matches(input)) throw CalculatorException("Invalid identifier")
-                    if (!assignmentRegex.matches(input)) throw CalculatorException("Invalid assignment")
-                    mapIdentifier(input)
-                    continue
-                }
-                if (input.isExpression()) input.mathRPN()
-                else throw CalculatorException("Invalid identifier")
             } catch (e: CalculatorException) {
                 println(e.message)
             }
@@ -50,6 +51,7 @@ object Calculator {
         when (command) {
             "/help" -> showHelp()
             "/variables" -> aboutVariables()
+            "/list" -> listVariables()
             "/exit" -> exit()
             "/commands" -> commandList()
         }
@@ -58,28 +60,37 @@ object Calculator {
     private fun commandList() = println("""
     Command List:
     /commands   - Shows all commands available in the command list.
-    /help       - Prints this fun little help message!
+    /help       - Prints the help message.
+    /list       - Lists currently assigned variables.
     /variables  - Gives you more information about how the program handles variables
     /exit       - Turns off the program
     """.trimIndent())
 
+    private fun listVariables() {
+        variables.forEach{ (key, value) -> println("$key = $value")}
+    }
     private fun showHelp() = println("""
         This program does math!
         
         Here are some things it can do:
         
-        Assign a variable to a number:
+    Assign a variable to a number:
         [variable_name]=[a_number]
         a = 2
         b = 3
         
-        Assign a variable to another variable that's already defined:
+    Assign a variable to another variable that's already defined:
         [variable_name]=[another_variable_name]
         a = 2 
         b = a 
         now, both a and b are equal to 2
+    
+    Assign a variable to an expression:
         
-        Re-assign variables.
+        c = 2*a+b^6
+        this only works if 'a' and 'b' are already defined.
+        
+    Re-assign variables.
         Input:
         a = 1 
         b = a 
@@ -87,20 +98,20 @@ object Calculator {
         Note, b is now also equal to 3
         You can learn more about this by typing /variables
         
-        Evaluate expressions using variables or numbers
+    Evaluate expressions using variables or numbers
         Supported operators: +, -, *, /
         1 + 2 
         output: 3
         3 * 5 
         output: 15
         
-        Evaluate more complicated expressions, taking care to follow expression priority:
+    Evaluate more complicated expressions, taking care to follow expression priority:
         2 - 1 * 8 + 6 / 2 
         output: -3
         3 + 8 * ((4 + 3) * 2 + 1) - 6 / (2 + 1) 
         output: 121
         
-        That's about everything.
+    That's about everything.
     """.trimIndent())
     private fun aboutVariables() = println("""
         Some notes about variables:
@@ -123,8 +134,18 @@ object Calculator {
     private fun mapIdentifier(assignment: String) {
         if (!assignment.matches(assignmentRegex)) throw RuntimeException("entered mapIdentifier illegally")
         val (identifierKey, identifierValue) = assignment.split("=").map { it.trim() }
-        if (identifierRegex.matches(identifierValue) && !variables.containsKey(identifierValue)) println("Unknown variable")
-        else variables[identifierKey] = identifierValue
+        if (variableRegex.matches(identifierValue) && !variables.containsKey(identifierValue)) throw CalculatorException("Unknown variable")
+        if (identifierValue.containsSelfReference(identifierKey)) throw CalculatorException("Cannot assign $identifierKey to $identifierValue because $identifierValue contains $identifierKey")
+        variables[identifierKey] = identifierValue
+    }
+    private fun String.containsSelfReference(assignee: String): Boolean {
+        return when {
+            this == assignee -> true
+            numberRegex.matches(this) -> false
+            variableRegex.matches(this) -> variables[this]?.containsSelfReference(assignee) ?: throw CalculatorException("Variable in Expression not in variables List!")
+            expressionRegex.matches(this) -> variableRegex.findAll(this).any { it.value.containsSelfReference(assignee) }
+            else -> throw CalculatorException("DEBUG: Calculator Exception: $this does not match any valid Regex")
+        }
     }
 
     private fun String.maths(operator: String = "?", second: String = ""): String {
@@ -185,7 +206,7 @@ object Calculator {
         } while (workingString.isNotEmpty())
         return workingList
     }
-    private fun String.mathRPN() {
+    private fun String.mathRPN(): String {
         val postfix: LinkedList<String> = this.toPostfixList()
         val workingStack: Stack<String> = Stack()
         while (postfix.isNotEmpty()) {
@@ -202,7 +223,7 @@ object Calculator {
             }
             throw CalculatorException("inHand string neither operator or operand... How'd that get in there?")
         }
-        println(workingStack.pop().decode())
+        return workingStack.pop().decode()
     }
     private fun String.toPostfixList(): LinkedList<String> {
         val expressionList = this.toExpressionList()
@@ -213,7 +234,7 @@ object Calculator {
                 operandRegex.matches(item) -> postfixList.add(item)
 
                 tempStack.isEmpty() -> tempStack.push(item)
-                (tempStack.peek() == "(") -> tempStack.push(item)
+                (tempStack.peek() == "(") -> if(item == ")") tempStack.pop() else tempStack.push(item)
                 (item.priority() > tempStack.peek().priority()) -> tempStack.push(item)
                 (item == "(") -> tempStack.push(item)
 
@@ -253,13 +274,7 @@ object Calculator {
         }
     }
     private fun String.isExpression(): Boolean {
-        var leftParenthesisCount = 0
-        var rightParenthesisCount= 0
-        for (char in this) {
-            if (char == '(') leftParenthesisCount++
-            if (char == ')') rightParenthesisCount++
-        }
-        if (leftParenthesisCount != rightParenthesisCount) throw CalculatorException("Invalid # of parenthesis")
+        if (this.count{it == '('} != this.count{it == ')'}) throw CalculatorException("Invalid # of parenthesis")
         if (!expressionRegex.matches(this)) throw CalculatorException("Invalid identifier")
         return true
     }
@@ -271,7 +286,8 @@ object Calculator {
                 if (!variables.containsKey(this)) {
                     throw CalculatorException("Unknown variable")
                 }
-                returnString = variables[returnString]!!
+                returnString = variables[returnString]?: throw CalculatorException("Uh-oh! Fun new error")
+                if (expressionRegex.matches(returnString)) returnString = returnString.mathRPN()
             }
         }
         if (priority1Regex.matches(returnString)) {
