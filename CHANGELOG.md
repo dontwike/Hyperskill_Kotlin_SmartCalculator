@@ -129,3 +129,28 @@ Changes:
 - Fleshed out the /help command and added a /variables command to give some information on variables in the calculator
 
 That's a wrap, send it!
+
+### Update v1.1: Expression assignment
+
+So I got a little bored, and I told myself I'd go back and add these things.
+- You can assign an expression to a variable, so long as the variables in the expression are already in the variable List.
+so like 
+```
+a = 1
+b = 2
+c = b^2 + 3*a
+```
+works. and if you change `b` to be `3` or something, `c` is updated accordingly.
+
+What you CANNOT do is assign an expression that relies on itself. For example:
+```
+a = 1
+b = a
+a = b //this gives you an error, since trying to evaluate it would cause a stackoverflow
+```
+
+- Added some color to the startup prompt, makes it more colorful, so it's easier to parse.
+- Then there's just another command to show the variables list and their associated values.
+- Bugfix for redundant parenthesis. `((4))` no longer throws an exception and is instead evaluated properly..
+
+That's all for now. I'm sure I can think of other, more productive improvements to this. But it was nice to get this update out of the way.
